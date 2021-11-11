@@ -1,0 +1,27 @@
+//@version=4
+strategy("MACD Strategy", overlay=true)
+fastLength = input(12)
+slowlength = input(26)
+MACDLength = input(9)
+slope_period = input(1, title="SLOPE PERIOD", minval=1)
+src = input(title="Source", type=input.source, defval=close)
+
+// Calculating
+fast_ma = ema(src, fast_length)
+slow_ma = ema(src, slow_length)
+macd = fast_ma - slow_ma
+signal = ema(macd, signal_length)
+signalSlope = (signal - signal[slope_period]) / slope_period
+hist = macd - signal
+ema_hist = ema(hist, hist_ema_length)
+ema_hist_slope = (ema_hist - ema_hist[slope_period]) / slope_period
+
+if (crossover(signalSlope, 0))
+    strategy.exit("short exit", "short entry", profit = 10, loss = 5, comment="Short Exit") // generate full exit bracket (profit 10 points, loss 5 points per contract) from entry with name "long"
+	strategy.entry("long entry", strategy.long, comment="Long Entry")
+	
+if (crossunder(signalSlope, 0))
+    strategy.exit("long exit", "long entry", profit = 10, loss = 5, comment="Long Exit") // generate full exit bracket (profit 10 points, loss 5 points per contract) from entry with name "long"
+	strategy.entry("short entry", strategy.short, comment="Short Entry")
+	
+//plot(strategy.equity, title="equity", color=color.red, linewidth=2, style=plot.style_areabr)
