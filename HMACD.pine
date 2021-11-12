@@ -1,0 +1,36 @@
+//@version=4
+study(title="MACD", shorttitle="MACD", resolution="")
+
+// Getting inputs
+fast_length = input(title="Fast Length", type=input.integer, defval=12)
+slow_length = input(title="Slow Length", type=input.integer, defval=26)
+ma_length =input(title="MA Length", type=input.integer, defval=14)
+src = input(title="Source", type=input.source, defval=close)
+signal_length = input(title="Signal Smoothing", type=input.integer, minval = 1, maxval = 50, defval = 9)
+sma_source = input(title="Exponential MA(Oscillator)", type=input.bool, defval=false)
+sma_signal = input(title="Exponential MA(Signal Line)", type=input.bool, defval=false)
+
+// Plot colors
+col_grow_above = #26A69A
+col_grow_below = #FFCDD2
+col_fall_above = #B2DFDB
+col_fall_below = #EF5350
+col_macd = #0094ff
+col_signal = #ff6a00
+
+// Calculating
+fast_ma = sma_source ? (ema(src, fast_length)) : (wma(2 * wma(close, fast_length / 2) - wma(close, fast_length), round(sqrt(fast_length))))
+slow_ma = sma_signal ? (ema(src, slow_length)) : wma(2 * wma(close, slow_length / 2) - wma(close, slow_length), round(sqrt(slow_length)))
+macd = fast_ma - slow_ma
+signal = sma_signal ? ema(macd, signal_length) : wma(2 * wma(macd, signal_length / 2) - wma(macd, signal_length), round(sqrt(signal_length)))
+hist = macd - signal
+hma_hist = (wma(2 * wma(hist, ma_length / 2) - wma(hist, ma_length), round(sqrt(ma_length))))
+
+
+plot(hist, title="Histogram", color=(hist>=0 ? (hist[1] < hist ? col_grow_above : col_fall_above) : (hist[1] < hist ? col_grow_below : col_fall_below) ), transp=0 )
+plot(hma_hist, title="Histogram", color=(hist>=0 ? (hist[1] < hist ? col_grow_above : col_fall_above) : (hist[1] < hist ? col_grow_below : col_fall_below) ), transp=0 )
+plot(macd, title="MACD", color=col_macd, transp=0)
+plot(signal, title="Signal", color=col_signal, transp=0)
+band0 = hline(0, "Mid Band", color=#C0C0C0, linestyle=hline.style_dotted, linewidth=1)
+band1 = hline(0.6, "Upper Band", color=#0FE35D,linestyle=hline.style_dotted, linewidth=1)
+band2 = hline(-0.6, "Lower Band", color=#FF1A40,linestyle=hline.style_dotted, linewidth=1)

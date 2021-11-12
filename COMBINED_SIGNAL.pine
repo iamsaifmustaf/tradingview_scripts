@@ -1,0 +1,117 @@
+study("Combined Buy-Sell Signal", shorttitle="GM_V2_KDJ")
+
+////INPUTS////
+
+//KDJ
+ilong = input(9, title="period")
+isig = input(3, title="signal")
+//OBV
+length1 = input(title="HMA1 Length", type=input.integer, defval=8)
+length2 = input(title="HMA2 Length", type=input.integer, defval=5)
+length3 = input(title="HMA3 Length", type=input.integer, defval=8)
+length4 = input(title="HMA4 Length", type=input.integer, defval=13)
+length5 = input(title="HMA5 Length", type=input.integer, defval=21)
+emaLength = input(title="EMA Length", type=input.integer, defval=8)
+src = close
+
+//RSI
+RSIlength = input(14, title="RSI LENGTH", minval=1)
+lengthHMA1 = input(3, title="AVERAGE LENGTH HMA1", minval=1)
+lengthHMA2 = input(5, title="AVERAGE LENGTH HMA2", minval=1)
+lengthHMA3 = input(8, title="AVERAGE LENGTH HMA3", minval=1)
+lengthHMA4 = input(13, title="AVERAGE LENGTH HMA4", minval=1)
+lengthHMA5 = input(34, title="AVERAGE LENGTH HMA5", minval=1)
+lengthEMA = input(14, title="AVERAGE LENGTH EMA", minval=1)
+lengthSMA = input(14, title="AVERAGE LENGTH SMA", minval=1)
+
+//Slope Period
+slope_period = input(1, title="Slope Period")
+
+////CALCULATIONS////
+
+//KDJ
+
+bcwsma(s,l,m) => 
+    _s = s
+    _l = l
+    _m = m
+    _bcwsma = (_m*_s+(_l-_m)*nz(_bcwsma[1]))/_l
+    _bcwsma
+
+c = close
+h = highest(high, ilong)
+l = lowest(low,ilong)
+
+RSV = 100*((c-l)/(h-l))
+
+pK = bcwsma(RSV, isig, 1)
+pD = bcwsma(pK, isig, 1)
+pJ = 3 * pK-2 * pD
+
+pj_slope = (pJ - pJ[slope_period]) / slope_period
+
+//OBV
+
+obv = cum(sign(change(src)) * volume)
+
+//OBV Slope
+obvSlope = (obv - obv[slope_period])/slope_period
+
+//HMA of OBV and Slope
+hma1 = wma(2*wma(obv, length1/2)-wma(obv, length1), round(sqrt(length1)))
+slopehma1=(hma1 - hma1[slope_period])/slope_period
+
+hma2 = wma(2*wma(obv, length2/2)-wma(obv, length2), round(sqrt(length2)))
+slopehma2=(hma2 - hma2[slope_period])/slope_period
+
+hma3 = wma(2*wma(obv, length3/2)-wma(obv, length3), round(sqrt(length3)))
+slopehma3=(hma3 - hma3[slope_period])/slope_period
+
+hma4 = wma(2*wma(obv, length4/2)-wma(obv, length4), round(sqrt(length4)))
+slopehma4=(hma4 - hma4[slope_period])/slope_period
+
+hma5 = wma(2*wma(obv, length5/2)-wma(obv, length5), round(sqrt(length5)))
+slopehma5=(hma5 - hma5[slope_period])/slope_period
+
+//EMA
+ema = ema(obv, emaLength)
+
+//Slope of EMA
+emaSlope = (ema - ema[slope_period]) / slope_period
+
+//HMA AVERAGE
+ama = (hma1 + hma2 + hma3 + hma4 + hma5 + ema) / 6
+
+//HMA AVERAGE SLOPE
+amaSlope = (ama - ama[slope_period])/slope_period
+
+//RSI
+
+rsi = rsi(close, RSIlength)
+
+//HMA of RSI and Slope
+hma1 = wma(2*wma(rsi, lengthHMA1/2)-wma(rsi, lengthHMA1), round(sqrt(lengthHMA1)))
+
+hma2 = wma(2*wma(rsi, lengthHMA2/2)-wma(rsi, lengthHMA2), round(sqrt(lengthHMA2)))
+
+hma3 = wma(2*wma(rsi, lengthHMA3/2)-wma(rsi, lengthHMA3), round(sqrt(lengthHMA3)))
+
+hma4 = wma(2*wma(rsi, lengthHMA4/2)-wma(rsi, lengthHMA4), round(sqrt(lengthHMA4)))
+
+hma5 = wma(2*wma(rsi, lengthHMA5/2)-wma(rsi, lengthHMA5), round(sqrt(lengthHMA5)))
+
+//EMA of RSI
+ema = ema(rsi, lengthEMA)
+
+//SMA of RSI
+sma = sma(rsi, lengthSMA)
+
+//AVERAGE MOVING AVERAGE
+ama = (hma1 + hma2 + hma3 + hma4 + hma5  + ema) / 6
+
+//Slope of AMA
+amaSlope = (ama - ama[slope_period]) / slope_period
+
+//PLOT COLOR
+    
+bgcolor(((pj_slope > 0 and amaSlope > 0 and pj_slope > 0) ? green : red), title="Direction Changes", transp=80)
